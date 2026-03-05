@@ -4,7 +4,7 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hóa Đơn Bán Gà - Chụp 1 Ảnh</title>
+    <title>Hóa Đơn Bán Gà - Telegram Mini App</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -51,7 +51,7 @@
             border-bottom: 1px dotted #333;
         }
         
-        /* Bảng danh sách món - Dạng cột báo */
+        /* Bảng danh sách món */
         .items-table {
             width: 100%;
             font-size: 13px;
@@ -116,7 +116,7 @@
             text-align: right;
         }
         
-        /* Input nhập liệu - nhưng vẫn giữ form đẹp để chụp */
+        /* Input nhập liệu */
         .control-panel {
             background: #f0f0f0;
             padding: 8px;
@@ -160,11 +160,19 @@
             font-weight: bold;
             color: white;
             font-size: 12px;
+            cursor: pointer;
         }
         .btn-luu { background: #28a745; }
         .btn-xoa { background: #dc3545; }
         .btn-moi { background: #17a2b8; }
         .btn-chup { background: #ff6b6b; }
+        .btn-telegram { 
+            background: #0088cc; 
+            margin-top: 10px;
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+        }
         
         /* Phần khách hàng cũ */
         .old-customer {
@@ -181,7 +189,7 @@
 </head>
 <body>
     <div class="bill" id="billCapture">
-        <!-- PHẦN HÓA ĐƠN - NHÌN RÕ TRONG 1 ẢNH -->
+        <!-- PHẦN HÓA ĐƠN -->
         <div class="bill-header">
             <h1>🐔 BÁN GÀ 🐔</h1>
             <div class="shop">CHUYÊN GÀ TA - GÀ THẢ VƯỜN</div>
@@ -192,7 +200,7 @@
             <span>Giờ: <span id="displayThoiGian"></span></span>
         </div>
         
-        <table class="items-table" id="billItems">
+        <table class="items-table">
             <thead>
                 <tr>
                     <th class="ten">Món</th>
@@ -202,7 +210,7 @@
                 </tr>
             </thead>
             <tbody id="billItemsBody">
-                <!-- Dữ liệu sẽ được fill bằng JS -->
+                <!-- JS sẽ fill -->
             </tbody>
         </table>
         
@@ -219,7 +227,7 @@
             </div>
         </div>
         
-        <!-- PHẦN ĐIỀU KHIỂN - ẨN KHI CHỤP, DÙNG ĐỂ NHẬP -->
+        <!-- PHẦN ĐIỀU KHIỂN -->
         <div class="control-panel">
             <h3>✏️ NHẬP HÓA ĐƠN</h3>
             
@@ -236,7 +244,7 @@
                 </select>
             </div>
             
-            <!-- Nhập số lượng và giá theo hàng ngang siêu gọn -->
+            <!-- Nhập số lượng và giá -->
             <div id="inputItems" style="max-height: 200px; overflow-y: auto; margin: 8px 0;"></div>
             
             <!-- Nút chức năng -->
@@ -245,15 +253,26 @@
                 <button class="btn btn-xoa" onclick="xoaGiaDaChon()">🗑️ Xóa</button>
                 <button class="btn btn-moi" onclick="resetAll()">🔄 Mới</button>
             </div>
-            <div style="margin-top:5px;">
-                <button class="btn btn-chup" onclick="thongBaoChup()">📸 BẤM VÀO ĐÂY RỒI CHỤP</button>
-            </div>
+            
+            <!-- Nút gửi qua Telegram -->
+            <button class="btn btn-telegram" onclick="guiQuaTelegram()">📲 GỬI HÓA ĐƠN QUA TELEGRAM</button>
         </div>
     </div>
 
     <script>
-        // DANH SÁCH MÓN - ĐÃ THÊM BỌNG VÀ MỀ
+        // DANH SÁCH MÓN
         const menu = ['Đùi','Cánh','Góc 4','Đầu','Tam Hoàng','Ta','Xương','X.đẹp','Má','Tỏi','Philê','C.bầm','Chân','Gan','BỌNG','MỀ'];
+        
+        // TELEGRAM WEB APP - KHỞI TẠO
+        let tg = null;
+        if (window.Telegram && window.Telegram.WebApp) {
+            tg = window.Telegram.WebApp;
+            tg.ready();
+            tg.expand();
+            console.log('✅ Telegram Web App đã sẵn sàng!');
+        } else {
+            console.log('⚠️ Không chạy trong Telegram');
+        }
         
         // Tạo phần nhập liệu
         function taoInputItems() {
@@ -270,7 +289,7 @@
             document.getElementById('inputItems').innerHTML = html;
         }
         
-        // Tạo bảng hiển thị hóa đơn
+        // Tạo bảng hiển thị
         function taoBangHienThi() {
             let html = '';
             for(let i=0; i<menu.length; i++) {
@@ -286,12 +305,10 @@
             document.getElementById('billItemsBody').innerHTML = html;
         }
         
-        // Cập nhật hiển thị hóa đơn từ dữ liệu nhập
+        // Cập nhật hiển thị
         function capNhatHienThi() {
-            // Cập nhật tên khách
             document.getElementById('displayTenKhach').innerText = document.getElementById('inputTenKhach').value || 'Khách lẻ';
             
-            // Cập nhật thời gian
             let now = new Date();
             let gio = now.getHours().toString().padStart(2,'0');
             let phut = now.getMinutes().toString().padStart(2,'0');
@@ -300,7 +317,6 @@
             document.getElementById('displayThoiGian').innerText = `${gio}:${phut}`;
             document.getElementById('displayNgay').innerText = `${ngay}/${thang}`;
             
-            // Cập nhật số lượng và giá
             let total = 0;
             for(let i=0; i<menu.length; i++) {
                 let q = parseFloat(document.getElementById('q'+i).value) || 0;
@@ -332,7 +348,13 @@
             localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
             
             capNhatDropdownKhach();
-            alert('✅ Đã lưu ' + ten);
+            
+            // Thông báo Telegram nếu đang trong app
+            if (tg) {
+                tg.showAlert('✅ Đã lưu khách: ' + ten);
+            } else {
+                alert('✅ Đã lưu ' + ten);
+            }
         }
         
         // Tải giá khách
@@ -353,18 +375,36 @@
         function xoaGiaDaChon() {
             let ten = document.getElementById('chonKhach').value;
             if(ten === 'Khách lẻ') {
-                alert('❌ Không xóa được');
+                if (tg) {
+                    tg.showAlert('❌ Không xóa được');
+                } else {
+                    alert('❌ Không xóa được');
+                }
                 return;
             }
             
-            if(confirm('Xóa khách ' + ten + '?')) {
-                let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
-                delete dsKhach[ten];
-                localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
-                capNhatDropdownKhach();
-                document.getElementById('chonKhach').value = 'Khách lẻ';
-                document.getElementById('inputTenKhach').value = 'Khách lẻ';
-                loadKhachHang();
+            if (tg) {
+                tg.showConfirm('Xóa khách ' + ten + '?', function(confirmed) {
+                    if (confirmed) {
+                        let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+                        delete dsKhach[ten];
+                        localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
+                        capNhatDropdownKhach();
+                        document.getElementById('chonKhach').value = 'Khách lẻ';
+                        document.getElementById('inputTenKhach').value = 'Khách lẻ';
+                        loadKhachHang();
+                    }
+                });
+            } else {
+                if(confirm('Xóa khách ' + ten + '?')) {
+                    let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+                    delete dsKhach[ten];
+                    localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
+                    capNhatDropdownKhach();
+                    document.getElementById('chonKhach').value = 'Khách lẻ';
+                    document.getElementById('inputTenKhach').value = 'Khách lẻ';
+                    loadKhachHang();
+                }
             }
         }
         
@@ -392,9 +432,45 @@
             capNhatHienThi();
         }
         
-        // Thông báo chụp màn hình
-        function thongBaoChup() {
-            alert('📸 Giờ bạn chỉ cần chụp màn hình phần HÓA ĐƠN phía trên! Tất cả thông tin đã gọn trong 1 ảnh.');
+        // Gửi hóa đơn qua Telegram
+        function guiQuaTelegram() {
+            if (!tg) {
+                alert('❌ Bạn đang không mở trong Telegram!');
+                return;
+            }
+            
+            let tenKhach = document.getElementById('inputTenKhach').value || 'Khách lẻ';
+            let tongTien = document.getElementById('displayTotal').innerText;
+            
+            // Tạo nội dung hóa đơn
+            let noiDung = `🧾 *HÓA ĐƠN BÁN GÀ*\n`;
+            noiDung += `👤 Khách: ${tenKhach}\n`;
+            noiDung += `⏰ Giờ: ${document.getElementById('displayThoiGian').innerText}\n`;
+            noiDung += `📅 Ngày: ${document.getElementById('displayNgay').innerText}\n`;
+            noiDung += `─────────────────\n`;
+            
+            for(let i=0; i<menu.length; i++) {
+                let q = document.getElementById('displayQ'+i).innerText;
+                let p = document.getElementById('displayP'+i).innerText;
+                let t = document.getElementById('displayT'+i).innerText;
+                
+                if (q !== '-') {
+                    noiDung += `${menu[i]}: ${q}kg x ${p} = ${t}\n`;
+                }
+            }
+            
+            noiDung += `─────────────────\n`;
+            noiDung += `💰 *TỔNG: ${tongTien}*`;
+            
+            // Gửi dữ liệu về bot
+            tg.sendData(JSON.stringify({
+                khach: tenKhach,
+                tong_tien: tongTien,
+                noi_dung: noiDung,
+                thoi_gian: new Date().toLocaleString()
+            }));
+            
+            tg.showAlert('✅ Đã gửi hóa đơn!');
         }
         
         // Khởi tạo
@@ -403,6 +479,7 @@
             taoBangHienThi();
             capNhatDropdownKhach();
             capNhatHienThi();
+            
             setInterval(() => {
                 let now = new Date();
                 let gio = now.getHours().toString().padStart(2,'0');
@@ -410,14 +487,6 @@
                 document.getElementById('displayThoiGian').innerText = `${gio}:${phut}`;
             }, 1000);
         };
-    </script>
-    
-    <!-- TELEGRAM WEB APP SCRIPT - ĐÃ SỬA LỖI -->
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        console.log('Telegram Web App đã sẵn sàng!');
     </script>
 </body>
 </html>
