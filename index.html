@@ -2,9 +2,10 @@
 <html>
 <head>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hóa Đơn Bán Gà - Telegram Mini App</title>
+    <title>Hóa Đơn Bán Gà - Chụp Ảnh Telegram</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -185,6 +186,20 @@
             padding: 5px;
             font-size: 12px;
         }
+        
+        /* Thông báo */
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
@@ -254,24 +269,31 @@
                 <button class="btn btn-moi" onclick="resetAll()">🔄 Mới</button>
             </div>
             
-            <!-- Nút gửi qua Telegram -->
-            <button class="btn btn-telegram" onclick="guiQuaTelegram()">📲 GỬI HÓA ĐƠN QUA TELEGRAM</button>
+            <!-- Nút CHỤP ẢNH và GỬI TELEGRAM -->
+            <button class="btn btn-chup" onclick="chupAnhHoaDon()">📸 CHỤP ẢNH HÓA ĐƠN</button>
+            <button class="btn btn-telegram" onclick="guiAnhVaNoiDung()">📤 GỬI ẢNH + NỘI DUNG</button>
         </div>
     </div>
+    
+    <!-- Loading indicator -->
+    <div class="loading" id="loading">🔄 Đang xử lý...</div>
 
     <script>
         // DANH SÁCH MÓN
         const menu = ['Đùi','Cánh','Góc 4','Đầu','Tam Hoàng','Ta','Xương','X.đẹp','Má','Tỏi','Philê','C.bầm','Chân','Gan','BỌNG','MỀ'];
         
-        // TELEGRAM WEB APP - KHỞI TẠO
+        // TELEGRAM WEB APP
         let tg = null;
         if (window.Telegram && window.Telegram.WebApp) {
             tg = window.Telegram.WebApp;
             tg.ready();
             tg.expand();
             console.log('✅ Telegram Web App đã sẵn sàng!');
-        } else {
-            console.log('⚠️ Không chạy trong Telegram');
+        }
+        
+        // Hiện/ẩn loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
         }
         
         // Tạo phần nhập liệu
@@ -296,9 +318,9 @@
                 html += `
                     <tr>
                         <td class="ten">${menu[i]}</td>
-                        <td class="kg" id="displayQ${i}">0</td>
-                        <td class="gia" id="displayP${i}">0</td>
-                        <td class="tien" id="displayT${i}">0</td>
+                        <td class="kg" id="displayQ${i}">-</td>
+                        <td class="gia" id="displayP${i}">-</td>
+                        <td class="tien" id="displayT${i}">-</td>
                     </tr>
                 `;
             }
@@ -349,7 +371,6 @@
             
             capNhatDropdownKhach();
             
-            // Thông báo Telegram nếu đang trong app
             if (tg) {
                 tg.showAlert('✅ Đã lưu khách: ' + ten);
             } else {
@@ -360,6 +381,8 @@
         // Tải giá khách
         function loadKhachHang() {
             let ten = document.getElementById('chonKhach').value;
+            if (ten === 'Khách lẻ') return;
+            
             document.getElementById('inputTenKhach').value = ten;
             
             let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
@@ -432,45 +455,118 @@
             capNhatHienThi();
         }
         
-        // Gửi hóa đơn qua Telegram
-        function guiQuaTelegram() {
-            if (!tg) {
-                alert('❌ Bạn đang không mở trong Telegram!');
-                return;
-            }
-            
+        // Tạo nội dung hóa đơn
+        function taoNoiDungHoaDon() {
             let tenKhach = document.getElementById('inputTenKhach').value || 'Khách lẻ';
             let tongTien = document.getElementById('displayTotal').innerText;
+            let gio = document.getElementById('displayThoiGian').innerText;
+            let ngay = document.getElementById('displayNgay').innerText;
             
-            // Tạo nội dung hóa đơn
             let noiDung = `🧾 *HÓA ĐƠN BÁN GÀ*\n`;
             noiDung += `👤 Khách: ${tenKhach}\n`;
-            noiDung += `⏰ Giờ: ${document.getElementById('displayThoiGian').innerText}\n`;
-            noiDung += `📅 Ngày: ${document.getElementById('displayNgay').innerText}\n`;
+            noiDung += `⏰ Giờ: ${gio} - ${ngay}\n`;
             noiDung += `─────────────────\n`;
             
             for(let i=0; i<menu.length; i++) {
                 let q = document.getElementById('displayQ'+i).innerText;
-                let p = document.getElementById('displayP'+i).innerText;
                 let t = document.getElementById('displayT'+i).innerText;
                 
                 if (q !== '-') {
-                    noiDung += `${menu[i]}: ${q}kg x ${p} = ${t}\n`;
+                    noiDung += `${menu[i]}: ${q}kg - ${t}\n`;
                 }
             }
             
             noiDung += `─────────────────\n`;
             noiDung += `💰 *TỔNG: ${tongTien}*`;
             
-            // Gửi dữ liệu về bot
-            tg.sendData(JSON.stringify({
-                khach: tenKhach,
-                tong_tien: tongTien,
-                noi_dung: noiDung,
-                thoi_gian: new Date().toLocaleString()
-            }));
+            return noiDung;
+        }
+        
+        // CHỤP ẢNH HÓA ĐƠN
+        function chupAnhHoaDon() {
+            showLoading(true);
+            const billElement = document.getElementById('billCapture');
             
-            tg.showAlert('✅ Đã gửi hóa đơn!');
+            html2canvas(billElement, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                logging: false,
+                allowTaint: true,
+                useCORS: true
+            }).then(canvas => {
+                showLoading(false);
+                
+                // Tạo link tải ảnh
+                const link = document.createElement('a');
+                link.download = `hoa_don_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // Thông báo
+                let msg = '✅ Đã tạo ảnh hóa đơn!\n📁 File đã được tải xuống.\n📤 Gửi file này cho bot Telegram.';
+                
+                if (tg) {
+                    tg.showAlert(msg);
+                } else {
+                    alert(msg);
+                }
+            }).catch(error => {
+                showLoading(false);
+                console.error('Lỗi:', error);
+                let msg = '❌ Lỗi tạo ảnh. Vui lòng chụp màn hình thủ công.';
+                
+                if (tg) {
+                    tg.showAlert(msg);
+                } else {
+                    alert(msg);
+                }
+            });
+        }
+        
+        // GỬI ẢNH VÀ NỘI DUNG
+        function guiAnhVaNoiDung() {
+            showLoading(true);
+            const billElement = document.getElementById('billCapture');
+            
+            html2canvas(billElement, {
+                scale: 2,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                showLoading(false);
+                
+                // Tạo nội dung text
+                let noiDung = taoNoiDungHoaDon();
+                
+                // Copy nội dung vào clipboard
+                navigator.clipboard.writeText(noiDung).then(() => {
+                    // Tạo ảnh và tải xuống
+                    const link = document.createElement('a');
+                    link.download = `hoa_don_${Date.now()}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    let msg = '✅ ĐÃ SẴN SÀNG!\n\n' +
+                             '1️⃣ Ảnh hóa đơn đã được tải xuống\n' +
+                             '2️⃣ Nội dung đã copy vào clipboard\n\n' +
+                             '📤 Vào Telegram, gửi ẢNH + DÁN nội dung cho bot!';
+                    
+                    if (tg) {
+                        tg.showAlert(msg);
+                    } else {
+                        alert(msg);
+                    }
+                }).catch(err => {
+                    let msg = '✅ Đã tạo ảnh! Gửi file cho bot Telegram.';
+                    if (tg) {
+                        tg.showAlert(msg);
+                    } else {
+                        alert(msg);
+                    }
+                });
+            }).catch(error => {
+                showLoading(false);
+                alert('❌ Lỗi! Vui lòng chụp màn hình thủ công.');
+            });
         }
         
         // Khởi tạo
