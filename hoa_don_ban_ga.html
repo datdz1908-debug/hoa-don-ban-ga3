@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hóa Đơn Bán Gà - Chụp 1 Ảnh</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background: #e0e0e0; 
+            padding: 5px;
+            font-family: 'Courier New', monospace;
+        }
+        .bill {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            padding: 12px 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border: 2px solid #333;
+        }
+        
+        /* Header hóa đơn */
+        .bill-header {
+            text-align: center;
+            border-bottom: 2px dashed #333;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
+        }
+        .bill-header h1 {
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        .bill-header .shop {
+            font-size: 14px;
+            color: #c00;
+            font-weight: bold;
+        }
+        
+        /* Thông tin khách hàng */
+        .customer-info {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            padding: 5px 0;
+            border-bottom: 1px dotted #333;
+        }
+        
+        /* Bảng danh sách món - Dạng cột báo */
+        .items-table {
+            width: 100%;
+            font-size: 13px;
+            margin-bottom: 10px;
+            border-collapse: collapse;
+        }
+        .items-table th {
+            text-align: left;
+            border-bottom: 1px solid #333;
+            padding: 3px 0;
+            font-size: 12px;
+        }
+        .items-table td {
+            padding: 2px 0;
+            vertical-align: middle;
+        }
+        .items-table .ten {
+            width: 90px;
+            font-weight: bold;
+        }
+        .items-table .kg {
+            text-align: center;
+            width: 50px;
+        }
+        .items-table .gia {
+            text-align: right;
+            width: 70px;
+        }
+        .items-table .tien {
+            text-align: right;
+            width: 70px;
+            font-weight: bold;
+        }
+        
+        /* Tổng kết */
+        .total-section {
+            border-top: 2px double #333;
+            border-bottom: 2px double #333;
+            padding: 8px 0;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .total-section .label {
+            text-transform: uppercase;
+        }
+        .total-section .amount {
+            color: #c00;
+        }
+        
+        /* Ghi chú và chữ ký */
+        .footer {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-top: 15px;
+            color: #555;
+        }
+        .signature {
+            text-align: right;
+        }
+        
+        /* Input nhập liệu - nhưng vẫn giữ form đẹp để chụp */
+        .control-panel {
+            background: #f0f0f0;
+            padding: 8px;
+            border-radius: 5px;
+            margin-top: 15px;
+            border: 1px solid #999;
+        }
+        .control-panel h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 3px 0;
+            font-size: 12px;
+        }
+        .input-row .label {
+            width: 50px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 3px;
+            border: 1px solid #999;
+            font-size: 12px;
+        }
+        
+        /* Nút bấm */
+        .btn-group {
+            display: flex;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 3px;
+            font-weight: bold;
+            color: white;
+            font-size: 12px;
+        }
+        .btn-luu { background: #28a745; }
+        .btn-xoa { background: #dc3545; }
+        .btn-moi { background: #17a2b8; }
+        .btn-chup { background: #ff6b6b; }
+        
+        /* Phần khách hàng cũ */
+        .old-customer {
+            margin-top: 8px;
+            padding-top: 5px;
+            border-top: 1px dashed #999;
+        }
+        select {
+            width: 100%;
+            padding: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bill" id="billCapture">
+        <!-- PHẦN HÓA ĐƠN - NHÌN RÕ TRONG 1 ẢNH -->
+        <div class="bill-header">
+            <h1>🐔 BÁN GÀ 🐔</h1>
+            <div class="shop">CHUYÊN GÀ TA - GÀ THẢ VƯỜN</div>
+        </div>
+        
+        <div class="customer-info">
+            <span>Khách: <span id="displayTenKhach">Khách lẻ</span></span>
+            <span>Giờ: <span id="displayThoiGian"></span></span>
+        </div>
+        
+        <table class="items-table" id="billItems">
+            <thead>
+                <tr>
+                    <th class="ten">Món</th>
+                    <th class="kg">Kg</th>
+                    <th class="gia">Giá</th>
+                    <th class="tien">Tiền</th>
+                </tr>
+            </thead>
+            <tbody id="billItemsBody">
+                <!-- Dữ liệu sẽ được fill bằng JS -->
+            </tbody>
+        </table>
+        
+        <div class="total-section">
+            <span class="label">Tổng cộng</span>
+            <span class="amount" id="displayTotal">0 VNĐ</span>
+        </div>
+        
+        <div class="footer">
+            <div>Cảm ơn quý khách!</div>
+            <div class="signature">
+                <div>Ngày <span id="displayNgay"></span></div>
+                <div>Nhân viên: ________</div>
+            </div>
+        </div>
+        
+        <!-- PHẦN ĐIỀU KHIỂN - ẨN KHI CHỤP, DÙNG ĐỂ NHẬP -->
+        <div class="control-panel">
+            <h3>✏️ NHẬP HÓA ĐƠN</h3>
+            
+            <!-- Tên khách mới -->
+            <div class="input-row">
+                <span class="label">Tên:</span>
+                <input type="text" id="inputTenKhach" placeholder="Nhập tên khách" value="Khách lẻ" oninput="capNhatHienThi()">
+            </div>
+            
+            <!-- Chọn khách cũ -->
+            <div class="old-customer">
+                <select id="chonKhach" onchange="loadKhachHang()">
+                    <option value="Khách lẻ">📋 Chọn khách cũ</option>
+                </select>
+            </div>
+            
+            <!-- Nhập số lượng và giá theo hàng ngang siêu gọn -->
+            <div id="inputItems" style="max-height: 200px; overflow-y: auto; margin: 8px 0;"></div>
+            
+            <!-- Nút chức năng -->
+            <div class="btn-group">
+                <button class="btn btn-luu" onclick="luuGiaKhach()">💾 Lưu</button>
+                <button class="btn btn-xoa" onclick="xoaGiaDaChon()">🗑️ Xóa</button>
+                <button class="btn btn-moi" onclick="resetAll()">🔄 Mới</button>
+            </div>
+            <div style="margin-top:5px;">
+                <button class="btn btn-chup" onclick="thongBaoChup()">📸 BẤM VÀO ĐÂY RỒI CHỤP</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DANH SÁCH MÓN - ĐÃ THÊM BỌNG VÀ MỀ
+        const menu = ['Đùi','Cánh','Góc 4','Đầu','Tam Hoàng','Ta','Xương','X.đẹp','Má','Tỏi','Philê','C.bầm','Chân','Gan','BỌNG','MỀ'];
+        
+        // Tạo phần nhập liệu
+        function taoInputItems() {
+            let html = '';
+            for(let i=0; i<menu.length; i++) {
+                html += `
+                    <div class="input-row" style="margin: 2px 0;">
+                        <span class="label" style="width:60px;">${menu[i]}:</span>
+                        <input type="number" id="q${i}" placeholder="kg" value="0" min="0" step="0.1" oninput="capNhatHienThi()" style="width:65px;">
+                        <input type="number" id="p${i}" placeholder="giá" value="0" min="0" step="1000" oninput="capNhatHienThi()" style="width:80px;">
+                    </div>
+                `;
+            }
+            document.getElementById('inputItems').innerHTML = html;
+        }
+        
+        // Tạo bảng hiển thị hóa đơn
+        function taoBangHienThi() {
+            let html = '';
+            for(let i=0; i<menu.length; i++) {
+                html += `
+                    <tr>
+                        <td class="ten">${menu[i]}</td>
+                        <td class="kg" id="displayQ${i}">0</td>
+                        <td class="gia" id="displayP${i}">0</td>
+                        <td class="tien" id="displayT${i}">0</td>
+                    </tr>
+                `;
+            }
+            document.getElementById('billItemsBody').innerHTML = html;
+        }
+        
+        // Cập nhật hiển thị hóa đơn từ dữ liệu nhập
+        function capNhatHienThi() {
+            // Cập nhật tên khách
+            document.getElementById('displayTenKhach').innerText = document.getElementById('inputTenKhach').value || 'Khách lẻ';
+            
+            // Cập nhật thời gian
+            let now = new Date();
+            let gio = now.getHours().toString().padStart(2,'0');
+            let phut = now.getMinutes().toString().padStart(2,'0');
+            let ngay = now.getDate().toString().padStart(2,'0');
+            let thang = (now.getMonth()+1).toString().padStart(2,'0');
+            document.getElementById('displayThoiGian').innerText = `${gio}:${phut}`;
+            document.getElementById('displayNgay').innerText = `${ngay}/${thang}`;
+            
+            // Cập nhật số lượng và giá
+            let total = 0;
+            for(let i=0; i<menu.length; i++) {
+                let q = parseFloat(document.getElementById('q'+i).value) || 0;
+                let p = parseFloat(document.getElementById('p'+i).value) || 0;
+                let t = q * p;
+                
+                document.getElementById('displayQ'+i).innerText = q > 0 ? q.toFixed(1) : '-';
+                document.getElementById('displayP'+i).innerText = p > 0 ? p.toLocaleString('vi-VN') : '-';
+                document.getElementById('displayT'+i).innerText = t > 0 ? t.toLocaleString('vi-VN') : '-';
+                
+                total += t;
+            }
+            
+            document.getElementById('displayTotal').innerText = total.toLocaleString('vi-VN') + ' VNĐ';
+        }
+        
+        // Lưu giá khách
+        function luuGiaKhach() {
+            let ten = document.getElementById('inputTenKhach').value.trim() || 'Khách lẻ';
+            let giaKhach = {};
+            
+            for(let i=0; i<menu.length; i++) {
+                let gia = parseFloat(document.getElementById('p'+i).value) || 0;
+                giaKhach[menu[i]] = gia;
+            }
+            
+            let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+            dsKhach[ten] = giaKhach;
+            localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
+            
+            capNhatDropdownKhach();
+            alert('✅ Đã lưu ' + ten);
+        }
+        
+        // Tải giá khách
+        function loadKhachHang() {
+            let ten = document.getElementById('chonKhach').value;
+            document.getElementById('inputTenKhach').value = ten;
+            
+            let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+            let giaKhach = dsKhach[ten] || {};
+            
+            for(let i=0; i<menu.length; i++) {
+                document.getElementById('p'+i).value = giaKhach[menu[i]] || 0;
+            }
+            capNhatHienThi();
+        }
+        
+        // Xóa giá khách
+        function xoaGiaDaChon() {
+            let ten = document.getElementById('chonKhach').value;
+            if(ten === 'Khách lẻ') {
+                alert('❌ Không xóa được');
+                return;
+            }
+            
+            if(confirm('Xóa khách ' + ten + '?')) {
+                let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+                delete dsKhach[ten];
+                localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
+                capNhatDropdownKhach();
+                document.getElementById('chonKhach').value = 'Khách lẻ';
+                document.getElementById('inputTenKhach').value = 'Khách lẻ';
+                loadKhachHang();
+            }
+        }
+        
+        // Cập nhật dropdown
+        function capNhatDropdownKhach() {
+            let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+            let select = document.getElementById('chonKhach');
+            select.innerHTML = '<option value="Khách lẻ">📋 Chọn khách cũ</option>';
+            
+            for(let ten in dsKhach) {
+                if(ten !== 'Khách lẻ') {
+                    select.innerHTML += `<option value="${ten}">${ten}</option>`;
+                }
+            }
+        }
+        
+        // Reset
+        function resetAll() {
+            for(let i=0; i<menu.length; i++) {
+                document.getElementById('q'+i).value = 0;
+                document.getElementById('p'+i).value = 0;
+            }
+            document.getElementById('inputTenKhach').value = 'Khách lẻ';
+            document.getElementById('chonKhach').value = 'Khách lẻ';
+            capNhatHienThi();
+        }
+        
+        // Thông báo chụp màn hình
+        function thongBaoChup() {
+            alert('📸 Giờ bạn chỉ cần chụp màn hình phần HÓA ĐƠN phía trên! Tất cả thông tin đã gọn trong 1 ảnh.');
+        }
+        
+        // Khởi tạo
+        window.onload = function() {
+            taoInputItems();
+            taoBangHienThi();
+            capNhatDropdownKhach();
+            capNhatHienThi();
+            setInterval(() => {
+                let now = new Date();
+                let gio = now.getHours().toString().padStart(2,'0');
+                let phut = now.getMinutes().toString().padStart(2,'0');
+                document.getElementById('displayThoiGian').innerText = `${gio}:${phut}`;
+            }, 1000);
+        };
+    </script>
+    
+    <!-- TELEGRAM WEB APP SCRIPT - ĐÃ SỬA LỖI -->
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        console.log('Telegram Web App đã sẵn sàng!');
+    </script>
+</body>
+</html>
