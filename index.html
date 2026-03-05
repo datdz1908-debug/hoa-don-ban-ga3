@@ -5,7 +5,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hóa Đơn Bán Gà - Chụp Ảnh Telegram</title>
+    <title>Hóa Đơn Bán Gà - Chụp Ảnh iPhone</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -13,17 +13,22 @@
             padding: 5px;
             font-family: 'Courier New', monospace;
         }
+        
+        /* PHẦN HÓA ĐƠN - Đây là phần sẽ được chụp */
         .bill {
             max-width: 400px;
-            margin: 0 auto;
+            margin: 0 auto 10px;
             background: white;
-            padding: 12px 10px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
             border: 2px solid #333;
         }
         
-        /* Header hóa đơn */
+        #billCapture {
+            background: white;
+            padding: 12px 10px;
+            border-radius: 10px;
+        }
+        
         .bill-header {
             text-align: center;
             border-bottom: 2px dashed #333;
@@ -41,7 +46,6 @@
             font-weight: bold;
         }
         
-        /* Thông tin khách hàng */
         .customer-info {
             display: flex;
             justify-content: space-between;
@@ -52,7 +56,6 @@
             border-bottom: 1px dotted #333;
         }
         
-        /* Bảng danh sách món */
         .items-table {
             width: 100%;
             font-size: 13px;
@@ -87,7 +90,6 @@
             font-weight: bold;
         }
         
-        /* Tổng kết */
         .total-section {
             border-top: 2px double #333;
             border-bottom: 2px double #333;
@@ -98,14 +100,10 @@
             font-size: 18px;
             font-weight: bold;
         }
-        .total-section .label {
-            text-transform: uppercase;
-        }
         .total-section .amount {
             color: #c00;
         }
         
-        /* Ghi chú và chữ ký */
         .footer {
             display: flex;
             justify-content: space-between;
@@ -117,165 +115,231 @@
             text-align: right;
         }
         
-        /* Input nhập liệu */
+        /* PHẦN ĐIỀU KHIỂN */
         .control-panel {
+            max-width: 400px;
+            margin: 0 auto;
             background: #f0f0f0;
-            padding: 8px;
-            border-radius: 5px;
-            margin-top: 15px;
+            padding: 15px;
+            border-radius: 10px;
             border: 1px solid #999;
         }
         .control-panel h3 {
-            font-size: 14px;
-            margin-bottom: 5px;
+            font-size: 16px;
+            margin-bottom: 10px;
             color: #333;
+            text-align: center;
         }
+        
         .input-row {
             display: flex;
             align-items: center;
             gap: 5px;
-            margin: 3px 0;
-            font-size: 12px;
+            margin: 5px 0;
+            background: white;
+            padding: 5px 8px;
+            border-radius: 5px;
         }
         .input-row .label {
-            width: 50px;
+            width: 60px;
+            font-weight: bold;
+            font-size: 14px;
         }
         .input-row input {
             flex: 1;
-            padding: 3px;
+            padding: 8px;
             border: 1px solid #999;
-            font-size: 12px;
+            border-radius: 5px;
+            font-size: 14px;
         }
         
-        /* Nút bấm */
         .btn-group {
             display: flex;
-            gap: 5px;
-            margin-top: 8px;
+            gap: 8px;
+            margin: 15px 0;
         }
         .btn {
             flex: 1;
-            padding: 8px;
+            padding: 12px 0;
             border: none;
-            border-radius: 3px;
+            border-radius: 8px;
             font-weight: bold;
             color: white;
-            font-size: 12px;
+            font-size: 14px;
             cursor: pointer;
+            -webkit-appearance: none;
         }
         .btn-luu { background: #28a745; }
         .btn-xoa { background: #dc3545; }
         .btn-moi { background: #17a2b8; }
-        .btn-chup { background: #ff6b6b; }
-        .btn-telegram { 
-            background: #0088cc; 
-            margin-top: 10px;
+        .btn-chup { 
+            background: #ff6b6b; 
             width: 100%;
-            padding: 10px;
-            font-size: 14px;
+            padding: 15px;
+            font-size: 18px;
+            margin-top: 5px;
         }
         
-        /* Phần khách hàng cũ */
         .old-customer {
-            margin-top: 8px;
-            padding-top: 5px;
-            border-top: 1px dashed #999;
+            margin: 10px 0;
         }
         select {
             width: 100%;
-            padding: 5px;
-            font-size: 12px;
+            padding: 10px;
+            font-size: 14px;
+            border-radius: 5px;
+            border: 1px solid #999;
         }
         
-        /* Thông báo */
-        .loading {
+        /* Khung hiển thị ảnh cho iPhone */
+        .image-preview {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
             display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            flex-direction: column;
+            padding: 20px;
+        }
+        .image-preview.show {
+            display: flex;
+        }
+        .preview-image {
+            max-width: 100%;
+            max-height: 70vh;
+            border: 3px solid white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .preview-text {
+            color: white;
+            font-size: 18px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .preview-btn {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 5px;
+            width: 200px;
+        }
+        .preview-btn.close {
+            background: #6c757d;
+        }
+        
+        .loading {
             position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.8);
             color: white;
-            padding: 15px;
-            border-radius: 10px;
-            z-index: 1000;
+            padding: 20px 30px;
+            border-radius: 15px;
+            z-index: 10001;
+            display: none;
+            font-size: 18px;
+        }
+        .loading.show {
+            display: block;
+        }
+        
+        #inputItems {
+            max-height: 250px;
+            overflow-y: auto;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
         }
     </style>
 </head>
 <body>
-    <div class="bill" id="billCapture">
-        <!-- PHẦN HÓA ĐƠN -->
-        <div class="bill-header">
-            <h1>🐔 BÁN GÀ 🐔</h1>
-            <div class="shop">CHUYÊN GÀ TA - GÀ THẢ VƯỜN</div>
-        </div>
-        
-        <div class="customer-info">
-            <span>Khách: <span id="displayTenKhach">Khách lẻ</span></span>
-            <span>Giờ: <span id="displayThoiGian"></span></span>
-        </div>
-        
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th class="ten">Món</th>
-                    <th class="kg">Kg</th>
-                    <th class="gia">Giá</th>
-                    <th class="tien">Tiền</th>
-                </tr>
-            </thead>
-            <tbody id="billItemsBody">
-                <!-- JS sẽ fill -->
-            </tbody>
-        </table>
-        
-        <div class="total-section">
-            <span class="label">Tổng cộng</span>
-            <span class="amount" id="displayTotal">0 VNĐ</span>
-        </div>
-        
-        <div class="footer">
-            <div>Cảm ơn quý khách!</div>
-            <div class="signature">
-                <div>Ngày <span id="displayNgay"></span></div>
-                <div>Nhân viên: ________</div>
-            </div>
-        </div>
-        
-        <!-- PHẦN ĐIỀU KHIỂN -->
-        <div class="control-panel">
-            <h3>✏️ NHẬP HÓA ĐƠN</h3>
-            
-            <!-- Tên khách mới -->
-            <div class="input-row">
-                <span class="label">Tên:</span>
-                <input type="text" id="inputTenKhach" placeholder="Nhập tên khách" value="Khách lẻ" oninput="capNhatHienThi()">
+    <!-- PHẦN HÓA ĐƠN - SẼ ĐƯỢC CHỤP -->
+    <div class="bill">
+        <div id="billCapture">
+            <div class="bill-header">
+                <h1>🐔 BÁN GÀ 🐔</h1>
+                <div class="shop">CHUYÊN GÀ TA - GÀ THẢ VƯỜN</div>
             </div>
             
-            <!-- Chọn khách cũ -->
-            <div class="old-customer">
-                <select id="chonKhach" onchange="loadKhachHang()">
-                    <option value="Khách lẻ">📋 Chọn khách cũ</option>
-                </select>
+            <div class="customer-info">
+                <span>Khách: <span id="displayTenKhach">Khách lẻ</span></span>
+                <span>Giờ: <span id="displayThoiGian"></span></span>
             </div>
             
-            <!-- Nhập số lượng và giá -->
-            <div id="inputItems" style="max-height: 200px; overflow-y: auto; margin: 8px 0;"></div>
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th class="ten">Món</th>
+                        <th class="kg">Kg</th>
+                        <th class="gia">Giá</th>
+                        <th class="tien">Tiền</th>
+                    </tr>
+                </thead>
+                <tbody id="billItemsBody"></tbody>
+            </table>
             
-            <!-- Nút chức năng -->
-            <div class="btn-group">
-                <button class="btn btn-luu" onclick="luuGiaKhach()">💾 Lưu</button>
-                <button class="btn btn-xoa" onclick="xoaGiaDaChon()">🗑️ Xóa</button>
-                <button class="btn btn-moi" onclick="resetAll()">🔄 Mới</button>
+            <div class="total-section">
+                <span class="label">Tổng cộng</span>
+                <span class="amount" id="displayTotal">0 VNĐ</span>
             </div>
             
-            <!-- Nút CHỤP ẢNH và GỬI TELEGRAM -->
-            <button class="btn btn-chup" onclick="chupAnhHoaDon()">📸 CHỤP ẢNH HÓA ĐƠN</button>
-            <button class="btn btn-telegram" onclick="guiAnhVaNoiDung()">📤 GỬI ẢNH + NỘI DUNG</button>
+            <div class="footer">
+                <div>Cảm ơn quý khách!</div>
+                <div class="signature">
+                    <div>Ngày <span id="displayNgay"></span></div>
+                    <div>Nhân viên: ________</div>
+                </div>
+            </div>
         </div>
     </div>
     
-    <!-- Loading indicator -->
+    <!-- PHẦN ĐIỀU KHIỂN -->
+    <div class="control-panel">
+        <h3>✏️ NHẬP HÓA ĐƠN</h3>
+        
+        <div class="input-row">
+            <span class="label">Tên:</span>
+            <input type="text" id="inputTenKhach" placeholder="Nhập tên khách" value="Khách lẻ" oninput="capNhatHienThi()">
+        </div>
+        
+        <div class="old-customer">
+            <select id="chonKhach" onchange="loadKhachHang()">
+                <option value="Khách lẻ">📋 Chọn khách cũ</option>
+            </select>
+        </div>
+        
+        <div id="inputItems"></div>
+        
+        <div class="btn-group">
+            <button class="btn btn-luu" onclick="luuGiaKhach()">💾 Lưu</button>
+            <button class="btn btn-xoa" onclick="xoaGiaDaChon()">🗑️ Xóa</button>
+            <button class="btn btn-moi" onclick="resetAll()">🔄 Mới</button>
+        </div>
+        
+        <!-- NÚT CHỤP ẢNH DUY NHẤT - TỐI ƯU CHO IPHONE -->
+        <button class="btn btn-chup" onclick="chupHoaDon()">📸 CHỤP HÓA ĐƠN</button>
+    </div>
+    
+    <!-- KHUNG HIỂN THỊ ẢNH CHO IPHONE -->
+    <div class="image-preview" id="imagePreview">
+        <img class="preview-image" id="previewImage" src="">
+        <div class="preview-text" id="previewText">✅ Nhấn giữ ảnh để lưu vào máy</div>
+        <button class="preview-btn" onclick="luuAnhTrucTiep()">💾 Lưu ảnh</button>
+        <button class="preview-btn close" onclick="dongPreview()">✖️ Đóng</button>
+    </div>
+    
     <div class="loading" id="loading">🔄 Đang xử lý...</div>
 
     <script>
@@ -284,16 +348,17 @@
         
         // TELEGRAM WEB APP
         let tg = null;
+        let currentImageData = null;
+        
         if (window.Telegram && window.Telegram.WebApp) {
             tg = window.Telegram.WebApp;
             tg.ready();
             tg.expand();
-            console.log('✅ Telegram Web App đã sẵn sàng!');
         }
         
-        // Hiện/ẩn loading
+        // Hiển thị loading
         function showLoading(show) {
-            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('loading').classList.toggle('show', show);
         }
         
         // Tạo phần nhập liệu
@@ -301,10 +366,10 @@
             let html = '';
             for(let i=0; i<menu.length; i++) {
                 html += `
-                    <div class="input-row" style="margin: 2px 0;">
+                    <div class="input-row">
                         <span class="label" style="width:60px;">${menu[i]}:</span>
-                        <input type="number" id="q${i}" placeholder="kg" value="0" min="0" step="0.1" oninput="capNhatHienThi()" style="width:65px;">
-                        <input type="number" id="p${i}" placeholder="giá" value="0" min="0" step="1000" oninput="capNhatHienThi()" style="width:80px;">
+                        <input type="number" id="q${i}" placeholder="kg" value="0" min="0" step="0.1" oninput="capNhatHienThi()">
+                        <input type="number" id="p${i}" placeholder="giá" value="0" min="0" step="1000" oninput="capNhatHienThi()">
                     </div>
                 `;
             }
@@ -394,7 +459,7 @@
             capNhatHienThi();
         }
         
-        // Xóa giá khách
+        // Xóa khách
         function xoaGiaDaChon() {
             let ten = document.getElementById('chonKhach').value;
             if(ten === 'Khách lẻ') {
@@ -408,27 +473,21 @@
             
             if (tg) {
                 tg.showConfirm('Xóa khách ' + ten + '?', function(confirmed) {
-                    if (confirmed) {
-                        let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
-                        delete dsKhach[ten];
-                        localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
-                        capNhatDropdownKhach();
-                        document.getElementById('chonKhach').value = 'Khách lẻ';
-                        document.getElementById('inputTenKhach').value = 'Khách lẻ';
-                        loadKhachHang();
-                    }
+                    if (confirmed) xoaKhach(ten);
                 });
             } else {
-                if(confirm('Xóa khách ' + ten + '?')) {
-                    let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
-                    delete dsKhach[ten];
-                    localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
-                    capNhatDropdownKhach();
-                    document.getElementById('chonKhach').value = 'Khách lẻ';
-                    document.getElementById('inputTenKhach').value = 'Khách lẻ';
-                    loadKhachHang();
-                }
+                if(confirm('Xóa khách ' + ten + '?')) xoaKhach(ten);
             }
+        }
+        
+        function xoaKhach(ten) {
+            let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
+            delete dsKhach[ten];
+            localStorage.setItem('dsKhachHang', JSON.stringify(dsKhach));
+            capNhatDropdownKhach();
+            document.getElementById('chonKhach').value = 'Khách lẻ';
+            document.getElementById('inputTenKhach').value = 'Khách lẻ';
+            loadKhachHang();
         }
         
         // Cập nhật dropdown
@@ -455,117 +514,63 @@
             capNhatHienThi();
         }
         
-        // Tạo nội dung hóa đơn
-        function taoNoiDungHoaDon() {
-            let tenKhach = document.getElementById('inputTenKhach').value || 'Khách lẻ';
-            let tongTien = document.getElementById('displayTotal').innerText;
-            let gio = document.getElementById('displayThoiGian').innerText;
-            let ngay = document.getElementById('displayNgay').innerText;
-            
-            let noiDung = `🧾 *HÓA ĐƠN BÁN GÀ*\n`;
-            noiDung += `👤 Khách: ${tenKhach}\n`;
-            noiDung += `⏰ Giờ: ${gio} - ${ngay}\n`;
-            noiDung += `─────────────────\n`;
-            
-            for(let i=0; i<menu.length; i++) {
-                let q = document.getElementById('displayQ'+i).innerText;
-                let t = document.getElementById('displayT'+i).innerText;
-                
-                if (q !== '-') {
-                    noiDung += `${menu[i]}: ${q}kg - ${t}\n`;
-                }
-            }
-            
-            noiDung += `─────────────────\n`;
-            noiDung += `💰 *TỔNG: ${tongTien}*`;
-            
-            return noiDung;
+        // Đóng preview ảnh
+        function dongPreview() {
+            document.getElementById('imagePreview').classList.remove('show');
         }
         
-        // CHỤP ẢNH HÓA ĐƠN
-        function chupAnhHoaDon() {
-            showLoading(true);
-            const billElement = document.getElementById('billCapture');
+        // Lưu ảnh trực tiếp (cho nút bấm)
+        function luuAnhTrucTiep() {
+            if (!currentImageData) return;
             
-            html2canvas(billElement, {
-                scale: 2,
+            const link = document.createElement('a');
+            link.download = `hoa_don_${Date.now()}.png`;
+            link.href = currentImageData;
+            link.click();
+            
+            if (tg) {
+                tg.showAlert('✅ Đã lưu ảnh! Kiểm tra trong mục Downloads');
+            }
+        }
+        
+        // 🎯 HÀM CHỤP ẢNH - TỐI ƯU CHO IPHONE
+        function chupHoaDon() {
+            showLoading(true);
+            
+            const element = document.getElementById('billCapture');
+            
+            const options = {
+                scale: 3,
                 backgroundColor: '#ffffff',
                 logging: false,
                 allowTaint: true,
                 useCORS: true
-            }).then(canvas => {
+            };
+            
+            html2canvas(element, options).then(canvas => {
                 showLoading(false);
                 
-                // Tạo link tải ảnh
-                const link = document.createElement('a');
-                link.download = `hoa_don_${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
+                // Lưu dữ liệu ảnh
+                currentImageData = canvas.toDataURL('image/png');
                 
-                // Thông báo
-                let msg = '✅ Đã tạo ảnh hóa đơn!\n📁 File đã được tải xuống.\n📤 Gửi file này cho bot Telegram.';
+                // Hiển thị ảnh trong khung preview
+                document.getElementById('previewImage').src = currentImageData;
+                document.getElementById('imagePreview').classList.add('show');
                 
+                // Thông báo Telegram
                 if (tg) {
-                    tg.showAlert(msg);
-                } else {
-                    alert(msg);
+                    tg.showAlert('📸 Đã chụp xong! Nhấn giữ ảnh để lưu vào máy');
                 }
+                
             }).catch(error => {
                 showLoading(false);
                 console.error('Lỗi:', error);
-                let msg = '❌ Lỗi tạo ảnh. Vui lòng chụp màn hình thủ công.';
                 
                 if (tg) {
-                    tg.showAlert(msg);
+                    tg.showAlert('❌ Lỗi chụp ảnh! Vui lòng chụp màn hình thủ công');
                 } else {
-                    alert(msg);
+                    alert('❌ Lỗi chụp ảnh! Vui lòng chụp màn hình thủ công');
                 }
-            });
-        }
-        
-        // GỬI ẢNH VÀ NỘI DUNG
-        function guiAnhVaNoiDung() {
-            showLoading(true);
-            const billElement = document.getElementById('billCapture');
-            
-            html2canvas(billElement, {
-                scale: 2,
-                backgroundColor: '#ffffff'
-            }).then(canvas => {
-                showLoading(false);
-                
-                // Tạo nội dung text
-                let noiDung = taoNoiDungHoaDon();
-                
-                // Copy nội dung vào clipboard
-                navigator.clipboard.writeText(noiDung).then(() => {
-                    // Tạo ảnh và tải xuống
-                    const link = document.createElement('a');
-                    link.download = `hoa_don_${Date.now()}.png`;
-                    link.href = canvas.toDataURL('image/png');
-                    link.click();
-                    
-                    let msg = '✅ ĐÃ SẴN SÀNG!\n\n' +
-                             '1️⃣ Ảnh hóa đơn đã được tải xuống\n' +
-                             '2️⃣ Nội dung đã copy vào clipboard\n\n' +
-                             '📤 Vào Telegram, gửi ẢNH + DÁN nội dung cho bot!';
-                    
-                    if (tg) {
-                        tg.showAlert(msg);
-                    } else {
-                        alert(msg);
-                    }
-                }).catch(err => {
-                    let msg = '✅ Đã tạo ảnh! Gửi file cho bot Telegram.';
-                    if (tg) {
-                        tg.showAlert(msg);
-                    } else {
-                        alert(msg);
-                    }
-                });
-            }).catch(error => {
-                showLoading(false);
-                alert('❌ Lỗi! Vui lòng chụp màn hình thủ công.');
             });
         }
         
