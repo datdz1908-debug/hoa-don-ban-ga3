@@ -178,13 +178,6 @@
             font-size: 18px;
             margin-top: 5px;
         }
-        .btn-save-album {
-            background: #5856d6;
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            margin-top: 10px;
-        }
         
         .old-customer {
             margin: 10px 0;
@@ -198,6 +191,7 @@
             background: white;
         }
         
+        /* KHUNG XEM ẢNH - TỐI ƯU CHO IPHONE */
         .image-preview {
             position: fixed;
             top: 0;
@@ -210,41 +204,57 @@
             align-items: center;
             z-index: 10000;
             flex-direction: column;
-            padding: 20px;
+            padding: 15px;
         }
         .image-preview.show {
             display: flex;
         }
         .preview-image {
             max-width: 100%;
-            max-height: 60vh;
+            max-height: 65vh;
             border: 3px solid white;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.7);
+            -webkit-user-select: none;
+            -webkit-touch-callout: default;
         }
         .preview-text {
             color: white;
-            font-size: 18px;
-            margin: 20px 0 10px;
+            font-size: 20px;
+            margin: 20px 0 15px;
             text-align: center;
+            font-weight: bold;
+            background: rgba(0,123,255,0.3);
+            padding: 15px 20px;
+            border-radius: 15px;
+            border: 1px solid #007bff;
+        }
+        .preview-instruction {
+            color: #ffd700;
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+            background: rgba(0,0,0,0.5);
+            padding: 12px 20px;
+            border-radius: 30px;
         }
         .preview-buttons {
             display: flex;
-            gap: 10px;
+            gap: 15px;
             flex-wrap: wrap;
             justify-content: center;
+            margin-top: 10px;
         }
         .preview-btn {
-            background: #007bff;
             color: white;
             border: none;
-            padding: 15px 25px;
-            border-radius: 10px;
+            padding: 15px 30px;
+            border-radius: 30px;
             font-size: 18px;
             font-weight: bold;
-            margin: 5px;
-            min-width: 180px;
+            min-width: 200px;
             cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
         .preview-btn.save {
             background: #28a745;
@@ -347,7 +357,7 @@
         <h3>✏️ NHẬP HÓA ĐƠN</h3>
         
         <div class="note">
-            💡 NHẬP GIÁ RÚT GỌN: 10 = 10.000đ, 15 = 15.000đ, 25 = 25.000đ
+            💡 NHẬP GIÁ RÚT GỌN: 10 = 10.000đ, 15 = 15.000đ
         </div>
         
         <div class="input-row">
@@ -372,21 +382,26 @@
         <button class="btn btn-chup" onclick="chupHoaDon()">📸 CHỤP HÓA ĐƠN</button>
     </div>
     
-    <!-- KHUNG HIỂN THỊ ẢNH - TỐI ƯU CHO IPHONE -->
+    <!-- KHUNG XEM ẢNH - TỐI ƯU CHO IPHONE -->
     <div class="image-preview" id="imagePreview">
-        <img class="preview-image" id="previewImage" src="">
-        <div class="preview-text" id="previewText">✅ Hóa đơn đã sẵn sàng</div>
+        <img class="preview-image" id="previewImage" src="" 
+             onload="setupImageForIOS()"
+             ontouchstart="imageTouched()">
+        <div class="preview-instruction" id="instruction">
+            👆 NHẤN GIỮ ẢNH → CHỌN "SAVE TO PHOTOS"
+        </div>
+        <div class="preview-text" id="previewText">
+            📸 Đã chụp xong! Thực hiện theo hướng dẫn
+        </div>
         <div class="preview-buttons">
-            <button class="preview-btn save" onclick="luuVaoAlbum()">💾 Lưu vào Album Ảnh</button>
-            <button class="preview-btn" onclick="luuAnhTrucTiep()">📁 Tải file</button>
-            <button class="preview-btn close" onclick="dongPreview()">✖️ Đóng</button>
+            <button class="preview-btn save" onclick="huongDanLuu()">📱 HƯỚNG DẪN LƯU ẢNH</button>
+            <button class="preview-btn close" onclick="dongPreview()">✖️ ĐÓNG</button>
         </div>
     </div>
     
-    <div class="loading" id="loading">🔄 Đang xử lý...</div>
+    <div class="loading" id="loading">🔄 Đang chụp...</div>
 
     <script>
-        // DANH SÁCH MÓN
         const menu = [
             'Đùi', 'Cánh', 'Góc 4', 'Đầu', 'Tam Hoàng', 'Ta', 
             'Xương', 'X.đẹp', 'Má', 'Tỏi', 'Philê', 'C.bầm', 
@@ -395,7 +410,6 @@
         
         let tg = null;
         let currentImageData = null;
-        let currentCanvas = null;
         
         if (window.Telegram && window.Telegram.WebApp) {
             tg = window.Telegram.WebApp;
@@ -407,7 +421,7 @@
             document.getElementById('loading').classList.toggle('show', show);
         }
         
-        // Tạo phần nhập liệu - ĐỂ TRỐNG KHÔNG CÓ 0
+        // Tạo phần nhập liệu
         function taoInputItems() {
             let html = '';
             for(let i=0; i<menu.length; i++) {
@@ -510,15 +524,11 @@
             capNhatHienThi();
         }
         
-        // Xóa khách
         function xoaGiaDaChon() {
             let ten = document.getElementById('chonKhach').value;
             if(ten === 'Khách lẻ') {
-                if (tg) {
-                    tg.showAlert('❌ Không xóa được');
-                } else {
-                    alert('❌ Không xóa được');
-                }
+                if (tg) tg.showAlert('❌ Không xóa được');
+                else alert('❌ Không xóa được');
                 return;
             }
             
@@ -541,7 +551,6 @@
             loadKhachHang();
         }
         
-        // Cập nhật dropdown
         function capNhatDropdownKhach() {
             let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
             let select = document.getElementById('chonKhach');
@@ -554,7 +563,6 @@
             }
         }
         
-        // Reset - ĐỂ TRỐNG HOÀN TOÀN
         function resetAll() {
             for(let i=0; i<menu.length; i++) {
                 document.getElementById('q'+i).value = '';
@@ -569,37 +577,21 @@
             document.getElementById('imagePreview').classList.remove('show');
         }
         
-        // Lưu vào album ảnh iPhone
-        function luuVaoAlbum() {
-            if (!currentImageData) return;
+        // HƯỚNG DẪN LƯU ẢNH CHO IPHONE
+        function huongDanLuu() {
+            let instruction = document.getElementById('instruction');
+            instruction.style.backgroundColor = '#28a745';
+            instruction.style.color = 'white';
+            instruction.innerHTML = '✅ NHẤN GIỮ ẢNH → CHỌN "SAVE TO PHOTOS"';
             
-            // Tạo link tải ảnh
-            const link = document.createElement('a');
-            link.href = currentImageData;
-            link.download = `hoa_don_${Date.now()}.png`;
-            link.click();
-            
-            // Hướng dẫn cho iPhone
             setTimeout(() => {
-                if (tg) {
-                    tg.showAlert('📸 Hướng dẫn: Nhấn giữ ảnh vừa tải > Chọn "Save to Photos"');
-                } else {
-                    alert('📸 Nhấn giữ ảnh vừa tải > Chọn "Save to Photos" để lưu vào album');
-                }
-            }, 500);
-        }
-        
-        // Lưu ảnh trực tiếp
-        function luuAnhTrucTiep() {
-            if (!currentImageData) return;
-            
-            const link = document.createElement('a');
-            link.download = `hoa_don_${Date.now()}.png`;
-            link.href = currentImageData;
-            link.click();
+                instruction.style.backgroundColor = 'rgba(0,0,0,0.5)';
+                instruction.style.color = '#ffd700';
+                instruction.innerHTML = '👆 NHẤN GIỮ ẢNH → CHỌN "SAVE TO PHOTOS"';
+            }, 3000);
             
             if (tg) {
-                tg.showAlert('✅ Đã tải ảnh xuống');
+                tg.showAlert('📱 Nhấn giữ ảnh > Chọn Save to Photos');
             }
         }
         
@@ -624,18 +616,16 @@
                 document.getElementById('previewImage').src = currentImageData;
                 document.getElementById('imagePreview').classList.add('show');
                 
-                if (tg) {
-                    tg.showAlert('📸 Đã chụp xong! Chọn "Lưu vào Album Ảnh"');
-                }
+                // Reset hướng dẫn
+                document.getElementById('instruction').innerHTML = '👆 NHẤN GIỮ ẢNH → CHỌN "SAVE TO PHOTOS"';
+                document.getElementById('instruction').style.backgroundColor = 'rgba(0,0,0,0.5)';
                 
             }).catch(error => {
                 showLoading(false);
-                console.error('Lỗi:', error);
-                
                 if (tg) {
                     tg.showAlert('❌ Lỗi chụp ảnh! Chụp màn hình thủ công');
                 } else {
-                    alert('❌ Lỗi chụp ảnh! Chụp màn hình thủ công');
+                    alert('❌ Lỗi chụp ảnh!');
                 }
             });
         }
