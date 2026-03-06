@@ -5,7 +5,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hóa Đơn Bán Gà - Lưu Ảnh iPhone</title>
+    <title>Hóa Đơn Bán Gà</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -191,66 +191,52 @@
             background: white;
         }
         
-        /* KHUNG XEM ẢNH - ĐƠN GIẢN NHẤT */
-        .image-preview {
+        /* THÔNG BÁO LƯU ẢNH */
+        .save-notice {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.95);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            z-index: 10002;
             display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            flex-direction: column;
-            padding: 15px;
-        }
-        .image-preview.show {
-            display: flex;
-        }
-        .preview-image {
-            max-width: 100%;
-            max-height: 60vh;
-            border: 3px solid white;
-            border-radius: 15px;
-            box-shadow: 0 0 30px rgba(0,0,0,0.7);
-        }
-        .preview-text {
-            color: white;
-            font-size: 20px;
-            margin: 20px 0;
+            max-width: 350px;
             text-align: center;
+            border: 3px solid #28a745;
+        }
+        .save-notice.show {
+            display: block;
+        }
+        .save-notice h3 {
+            color: #28a745;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        .save-notice p {
+            font-size: 18px;
+            margin: 15px 0;
+            line-height: 1.5;
+        }
+        .save-notice .step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
             font-weight: bold;
+        }
+        .save-notice button {
             background: #007bff;
-            padding: 15px 25px;
-            border-radius: 30px;
-        }
-        .preview-buttons {
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
-            margin-top: 10px;
-        }
-        .preview-btn {
             color: white;
             border: none;
             padding: 15px 30px;
             border-radius: 30px;
             font-size: 18px;
             font-weight: bold;
-            min-width: 200px;
-            cursor: pointer;
-        }
-        .preview-btn.save {
-            background: #28a745;
-        }
-        .preview-btn.open {
-            background: #007bff;
-        }
-        .preview-btn.close {
-            background: #6c757d;
+            width: 100%;
+            margin: 5px 0;
         }
         
         .loading {
@@ -363,16 +349,16 @@
         <button class="btn btn-chup" onclick="chupHoaDon()">📸 CHỤP HÓA ĐƠN</button>
     </div>
     
-    <!-- KHUNG XEM ẢNH - CÁCH LƯU ĐƠN GIẢN NHẤT -->
-    <div class="image-preview" id="imagePreview">
-        <img class="preview-image" id="previewImage" src="">
-        <div class="preview-text" id="previewText">
-            ✅ ĐÃ CHỤP XONG!
+    <!-- THÔNG BÁO HƯỚNG DẪN LƯU ẢNH -->
+    <div class="save-notice" id="saveNotice">
+        <h3>✅ CHỤP ẢNH THÀNH CÔNG!</h3>
+        <div class="step">
+            📸 ẢNH HÓA ĐƠN ĐÃ ĐƯỢC TẢI VỀ
         </div>
-        <div class="preview-buttons">
-            <button class="preview-btn open" onclick="moAnhTrinhDuyet()">🌐 MỞ ẢNH TRONG SAFARI</button>
-            <button class="preview-btn close" onclick="dongPreview()">✖️ ĐÓNG</button>
-        </div>
+        <p style="color: #28a745; font-weight: bold;">👇 LÀM THEO 2 BƯỚC SAU:</p>
+        <p>1️⃣ Mở ứng dụng <b>FILE</b> (Tệp) trên iPhone</p>
+        <p>2️⃣ Vào mục <b>Downloads</b> → Nhấn vào ảnh → Chọn <b>Save Image</b></p>
+        <button onclick="dongThongBao()">✖️ ĐÃ HIỂU</button>
     </div>
     
     <div class="loading" id="loading">🔄 Đang chụp...</div>
@@ -385,7 +371,6 @@
         ];
         
         let tg = null;
-        let currentImageData = null;
         
         if (window.Telegram && window.Telegram.WebApp) {
             tg = window.Telegram.WebApp;
@@ -395,6 +380,10 @@
         
         function showLoading(show) {
             document.getElementById('loading').classList.toggle('show', show);
+        }
+        
+        function dongThongBao() {
+            document.getElementById('saveNotice').classList.remove('show');
         }
         
         function taoInputItems() {
@@ -544,55 +533,7 @@
             capNhatHienThi();
         }
         
-        function dongPreview() {
-            document.getElementById('imagePreview').classList.remove('show');
-        }
-        
-        // CÁCH LƯU ẢNH ĐƠN GIẢN NHẤT - MỞ TRONG SAFARI
-        function moAnhTrinhDuyet() {
-            if (!currentImageData) return;
-            
-            // Tạo một thẻ a ảo để mở ảnh trong tab mới
-            const win = window.open();
-            win.document.write(`
-                <html>
-                    <head>
-                        <title>Hóa đơn bán gà</title>
-                        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                        <style>
-                            body { 
-                                margin: 0; 
-                                display: flex; 
-                                justify-content: center; 
-                                align-items: center; 
-                                min-height: 100vh;
-                                background: #000;
-                            }
-                            img { 
-                                max-width: 100%; 
-                                max-height: 100vh;
-                                object-fit: contain;
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <img src="${currentImageData}" alt="Hóa đơn">
-                    </body>
-                </html>
-            `);
-            win.document.close();
-            
-            // Đóng preview
-            setTimeout(() => {
-                dongPreview();
-            }, 500);
-            
-            if (tg) {
-                tg.showAlert('🌐 Ảnh đã mở trong tab mới. Nhấn giữ ảnh để lưu!');
-            }
-        }
-        
-        // Chụp hóa đơn
+        // 🎯 HÀM CHỤP ẢNH - TỐI ƯU CHO IPHONE
         function chupHoaDon() {
             showLoading(true);
             
@@ -609,9 +550,20 @@
             html2canvas(element, options).then(canvas => {
                 showLoading(false);
                 
-                currentImageData = canvas.toDataURL('image/png');
-                document.getElementById('previewImage').src = currentImageData;
-                document.getElementById('imagePreview').classList.add('show');
+                // Tạo link tải ảnh
+                const link = document.createElement('a');
+                link.download = `hoa_don_${Date.now()}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                // Hiển thị hướng dẫn lưu ảnh
+                setTimeout(() => {
+                    document.getElementById('saveNotice').classList.add('show');
+                }, 1000);
+                
+                if (tg) {
+                    tg.showAlert('✅ Đã tải ảnh! Vào File > Downloads để lưu vào album');
+                }
                 
             }).catch(error => {
                 showLoading(false);
