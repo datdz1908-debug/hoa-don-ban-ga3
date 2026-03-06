@@ -5,7 +5,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hóa Đơn Bán Gà - Chụp Ảnh iPhone</title>
+    <title>Hóa Đơn Bán Gà - Tối Ưu iPhone</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -14,7 +14,6 @@
             font-family: 'Courier New', monospace;
         }
         
-        /* PHẦN HÓA ĐƠN - Đây là phần sẽ được chụp */
         .bill {
             max-width: 400px;
             margin: 0 auto 10px;
@@ -115,7 +114,6 @@
             text-align: right;
         }
         
-        /* PHẦN ĐIỀU KHIỂN */
         .control-panel {
             max-width: 400px;
             margin: 0 auto;
@@ -141,7 +139,7 @@
             border-radius: 5px;
         }
         .input-row .label {
-            width: 60px;
+            width: 70px;
             font-weight: bold;
             font-size: 14px;
         }
@@ -151,6 +149,7 @@
             border: 1px solid #999;
             border-radius: 5px;
             font-size: 14px;
+            background: white;
         }
         
         .btn-group {
@@ -179,6 +178,13 @@
             font-size: 18px;
             margin-top: 5px;
         }
+        .btn-save-album {
+            background: #5856d6;
+            width: 100%;
+            padding: 15px;
+            font-size: 18px;
+            margin-top: 10px;
+        }
         
         .old-customer {
             margin: 10px 0;
@@ -189,16 +195,16 @@
             font-size: 14px;
             border-radius: 5px;
             border: 1px solid #999;
+            background: white;
         }
         
-        /* Khung hiển thị ảnh cho iPhone */
         .image-preview {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             display: none;
             justify-content: center;
             align-items: center;
@@ -211,7 +217,7 @@
         }
         .preview-image {
             max-width: 100%;
-            max-height: 70vh;
+            max-height: 60vh;
             border: 3px solid white;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0,0,0,0.5);
@@ -219,19 +225,29 @@
         .preview-text {
             color: white;
             font-size: 18px;
-            margin: 20px 0;
+            margin: 20px 0 10px;
             text-align: center;
+        }
+        .preview-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         .preview-btn {
             background: #007bff;
             color: white;
             border: none;
-            padding: 15px 30px;
+            padding: 15px 25px;
             border-radius: 10px;
             font-size: 18px;
             font-weight: bold;
             margin: 5px;
-            width: 200px;
+            min-width: 180px;
+            cursor: pointer;
+        }
+        .preview-btn.save {
+            background: #28a745;
         }
         .preview-btn.close {
             background: #6c757d;
@@ -255,17 +271,38 @@
         }
         
         #inputItems {
-            max-height: 250px;
+            max-height: 300px;
             overflow-y: auto;
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 5px;
             padding: 5px;
+            background: #fff;
+        }
+        
+        .note {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            text-align: center;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+        
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
         }
     </style>
 </head>
 <body>
-    <!-- PHẦN HÓA ĐƠN - SẼ ĐƯỢC CHỤP -->
+    <!-- PHẦN HÓA ĐƠN -->
     <div class="bill">
         <div id="billCapture">
             <div class="bill-header">
@@ -309,6 +346,10 @@
     <div class="control-panel">
         <h3>✏️ NHẬP HÓA ĐƠN</h3>
         
+        <div class="note">
+            💡 NHẬP GIÁ RÚT GỌN: 10 = 10.000đ, 15 = 15.000đ, 25 = 25.000đ
+        </div>
+        
         <div class="input-row">
             <span class="label">Tên:</span>
             <input type="text" id="inputTenKhach" placeholder="Nhập tên khách" value="Khách lẻ" oninput="capNhatHienThi()">
@@ -328,27 +369,33 @@
             <button class="btn btn-moi" onclick="resetAll()">🔄 Mới</button>
         </div>
         
-        <!-- NÚT CHỤP ẢNH DUY NHẤT - TỐI ƯU CHO IPHONE -->
         <button class="btn btn-chup" onclick="chupHoaDon()">📸 CHỤP HÓA ĐƠN</button>
     </div>
     
-    <!-- KHUNG HIỂN THỊ ẢNH CHO IPHONE -->
+    <!-- KHUNG HIỂN THỊ ẢNH - TỐI ƯU CHO IPHONE -->
     <div class="image-preview" id="imagePreview">
         <img class="preview-image" id="previewImage" src="">
-        <div class="preview-text" id="previewText">✅ Nhấn giữ ảnh để lưu vào máy</div>
-        <button class="preview-btn" onclick="luuAnhTrucTiep()">💾 Lưu ảnh</button>
-        <button class="preview-btn close" onclick="dongPreview()">✖️ Đóng</button>
+        <div class="preview-text" id="previewText">✅ Hóa đơn đã sẵn sàng</div>
+        <div class="preview-buttons">
+            <button class="preview-btn save" onclick="luuVaoAlbum()">💾 Lưu vào Album Ảnh</button>
+            <button class="preview-btn" onclick="luuAnhTrucTiep()">📁 Tải file</button>
+            <button class="preview-btn close" onclick="dongPreview()">✖️ Đóng</button>
+        </div>
     </div>
     
     <div class="loading" id="loading">🔄 Đang xử lý...</div>
 
     <script>
         // DANH SÁCH MÓN
-        const menu = ['Đùi','Cánh','Góc 4','Đầu','Tam Hoàng','Ta','Xương','X.đẹp','Má','Tỏi','Philê','C.bầm','Chân','Gan','BỌNG','MỀ'];
+        const menu = [
+            'Đùi', 'Cánh', 'Góc 4', 'Đầu', 'Tam Hoàng', 'Ta', 
+            'Xương', 'X.đẹp', 'Má', 'Tỏi', 'Philê', 'C.bầm', 
+            'Chân', 'Gan', 'BỌNG', 'MỀ', 'Gà tơ', 'Lòng bộ'
+        ];
         
-        // TELEGRAM WEB APP
         let tg = null;
         let currentImageData = null;
+        let currentCanvas = null;
         
         if (window.Telegram && window.Telegram.WebApp) {
             tg = window.Telegram.WebApp;
@@ -356,20 +403,19 @@
             tg.expand();
         }
         
-        // Hiển thị loading
         function showLoading(show) {
             document.getElementById('loading').classList.toggle('show', show);
         }
         
-        // Tạo phần nhập liệu
+        // Tạo phần nhập liệu - ĐỂ TRỐNG KHÔNG CÓ 0
         function taoInputItems() {
             let html = '';
             for(let i=0; i<menu.length; i++) {
                 html += `
                     <div class="input-row">
-                        <span class="label" style="width:60px;">${menu[i]}:</span>
-                        <input type="number" id="q${i}" placeholder="kg" value="0" min="0" step="0.1" oninput="capNhatHienThi()">
-                        <input type="number" id="p${i}" placeholder="giá" value="0" min="0" step="1000" oninput="capNhatHienThi()">
+                        <span class="label">${menu[i]}:</span>
+                        <input type="number" id="q${i}" placeholder="kg" step="0.1" oninput="capNhatHienThi()">
+                        <input type="number" id="p${i}" placeholder="giá (VD: 10)" step="1" oninput="capNhatHienThi()">
                     </div>
                 `;
             }
@@ -406,12 +452,16 @@
             
             let total = 0;
             for(let i=0; i<menu.length; i++) {
-                let q = parseFloat(document.getElementById('q'+i).value) || 0;
-                let p = parseFloat(document.getElementById('p'+i).value) || 0;
-                let t = q * p;
+                let qInput = document.getElementById('q'+i).value;
+                let pInput = document.getElementById('p'+i).value;
+                
+                let q = qInput === '' ? 0 : parseFloat(qInput);
+                let giaNhap = pInput === '' ? 0 : parseFloat(pInput);
+                let giaThuc = giaNhap * 1000;
+                let t = q * giaThuc;
                 
                 document.getElementById('displayQ'+i).innerText = q > 0 ? q.toFixed(1) : '-';
-                document.getElementById('displayP'+i).innerText = p > 0 ? p.toLocaleString('vi-VN') : '-';
+                document.getElementById('displayP'+i).innerText = giaNhap > 0 ? giaNhap + 'k' : '-';
                 document.getElementById('displayT'+i).innerText = t > 0 ? t.toLocaleString('vi-VN') : '-';
                 
                 total += t;
@@ -426,8 +476,9 @@
             let giaKhach = {};
             
             for(let i=0; i<menu.length; i++) {
-                let gia = parseFloat(document.getElementById('p'+i).value) || 0;
-                giaKhach[menu[i]] = gia;
+                let pInput = document.getElementById('p'+i).value;
+                let giaNhap = pInput === '' ? 0 : parseFloat(pInput);
+                giaKhach[menu[i]] = giaNhap;
             }
             
             let dsKhach = JSON.parse(localStorage.getItem('dsKhachHang')) || {};
@@ -454,7 +505,7 @@
             let giaKhach = dsKhach[ten] || {};
             
             for(let i=0; i<menu.length; i++) {
-                document.getElementById('p'+i).value = giaKhach[menu[i]] || 0;
+                document.getElementById('p'+i).value = giaKhach[menu[i]] || '';
             }
             capNhatHienThi();
         }
@@ -503,23 +554,42 @@
             }
         }
         
-        // Reset
+        // Reset - ĐỂ TRỐNG HOÀN TOÀN
         function resetAll() {
             for(let i=0; i<menu.length; i++) {
-                document.getElementById('q'+i).value = 0;
-                document.getElementById('p'+i).value = 0;
+                document.getElementById('q'+i).value = '';
+                document.getElementById('p'+i).value = '';
             }
             document.getElementById('inputTenKhach').value = 'Khách lẻ';
             document.getElementById('chonKhach').value = 'Khách lẻ';
             capNhatHienThi();
         }
         
-        // Đóng preview ảnh
         function dongPreview() {
             document.getElementById('imagePreview').classList.remove('show');
         }
         
-        // Lưu ảnh trực tiếp (cho nút bấm)
+        // Lưu vào album ảnh iPhone
+        function luuVaoAlbum() {
+            if (!currentImageData) return;
+            
+            // Tạo link tải ảnh
+            const link = document.createElement('a');
+            link.href = currentImageData;
+            link.download = `hoa_don_${Date.now()}.png`;
+            link.click();
+            
+            // Hướng dẫn cho iPhone
+            setTimeout(() => {
+                if (tg) {
+                    tg.showAlert('📸 Hướng dẫn: Nhấn giữ ảnh vừa tải > Chọn "Save to Photos"');
+                } else {
+                    alert('📸 Nhấn giữ ảnh vừa tải > Chọn "Save to Photos" để lưu vào album');
+                }
+            }, 500);
+        }
+        
+        // Lưu ảnh trực tiếp
         function luuAnhTrucTiep() {
             if (!currentImageData) return;
             
@@ -529,11 +599,11 @@
             link.click();
             
             if (tg) {
-                tg.showAlert('✅ Đã lưu ảnh! Kiểm tra trong mục Downloads');
+                tg.showAlert('✅ Đã tải ảnh xuống');
             }
         }
         
-        // 🎯 HÀM CHỤP ẢNH - TỐI ƯU CHO IPHONE
+        // Chụp hóa đơn
         function chupHoaDon() {
             showLoading(true);
             
@@ -550,16 +620,12 @@
             html2canvas(element, options).then(canvas => {
                 showLoading(false);
                 
-                // Lưu dữ liệu ảnh
                 currentImageData = canvas.toDataURL('image/png');
-                
-                // Hiển thị ảnh trong khung preview
                 document.getElementById('previewImage').src = currentImageData;
                 document.getElementById('imagePreview').classList.add('show');
                 
-                // Thông báo Telegram
                 if (tg) {
-                    tg.showAlert('📸 Đã chụp xong! Nhấn giữ ảnh để lưu vào máy');
+                    tg.showAlert('📸 Đã chụp xong! Chọn "Lưu vào Album Ảnh"');
                 }
                 
             }).catch(error => {
@@ -567,14 +633,13 @@
                 console.error('Lỗi:', error);
                 
                 if (tg) {
-                    tg.showAlert('❌ Lỗi chụp ảnh! Vui lòng chụp màn hình thủ công');
+                    tg.showAlert('❌ Lỗi chụp ảnh! Chụp màn hình thủ công');
                 } else {
-                    alert('❌ Lỗi chụp ảnh! Vui lòng chụp màn hình thủ công');
+                    alert('❌ Lỗi chụp ảnh! Chụp màn hình thủ công');
                 }
             });
         }
         
-        // Khởi tạo
         window.onload = function() {
             taoInputItems();
             taoBangHienThi();
